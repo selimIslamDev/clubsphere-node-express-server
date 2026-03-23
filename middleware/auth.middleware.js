@@ -53,6 +53,21 @@ export const verifyManager = async (req, res, next) => {
 };
 
 // ─── Verify Member (any logged-in user) ───────────────────────────────────────
+// export const verifyMember = async (req, res, next) => {
+//   try {
+//     const db = getDB();
+//     const user = await db.collection("users").findOne({ email: req.user.email });
+
+//     if (!user) {
+//       return res.status(403).json({ success: false, message: "Forbidden: User not found" });
+//     }
+//     req.dbUser = user;
+//     next();
+//   } catch (error) {
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+// ─── Verify Member (Only users with 'member' role) ───────────────────────
 export const verifyMember = async (req, res, next) => {
   try {
     const db = getDB();
@@ -61,6 +76,12 @@ export const verifyMember = async (req, res, next) => {
     if (!user) {
       return res.status(403).json({ success: false, message: "Forbidden: User not found" });
     }
+
+    // এই লাইনটি যোগ করুন: শুধু মেম্বার রোল থাকলেই পারমিশন পাবে
+    if (user.role !== "member") {
+      return res.status(403).json({ success: false, message: "Forbidden: Members only" });
+    }
+
     req.dbUser = user;
     next();
   } catch (error) {
