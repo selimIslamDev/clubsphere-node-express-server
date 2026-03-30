@@ -29,8 +29,20 @@ app.use(
 );
 app.use(express.json());
 
-// ─── Connect Database ──────────────────────────────────────────────────────────
-connectDB();
+// ─── DB Connection Middleware (নতুন ইনজেক্ট করা অংশ) ─────────────────────────────
+// এটি নিশ্চিত করবে যে কোন এপিআই কল হওয়ার আগে ডেটাবেস কানেকশন তৈরি হয়েছে।
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Database connection failed. Please check server logs." 
+    });
+  }
+});
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
@@ -66,3 +78,5 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ ClubSphere server running on port ${PORT}`);
 });
+
+export default app; // Vercel deployment-এর জন্য এটি প্রয়োজন হতে পারে

@@ -1,40 +1,33 @@
 import { MongoClient } from "mongodb";
 
-let db;
 let client;
+let db;
 
 export const connectDB = async () => {
+  // যদি আগে থেকেই কানেকশন থাকে, তবে সেটিই রিটার্ন করবে
+  if (db) return db;
+
   try {
-    client = new MongoClient(process.env.MONGODB_URI);
+    if (!client) {
+      client = new MongoClient(process.env.MONGODB_URI, {
+        maxPoolSize: 10, // সার্ভারলেস ফাংশনের জন্য এটি ভালো
+      });
+    }
     await client.connect();
     db = client.db("clubsphere");
     console.log("✅ MongoDB connected successfully");
-    await createIndexes();
+    
+    // ইন্ডেক্স তৈরির কাজ এখানে না করে আলাদাভাবে একবার করা উচিত
+    // await createIndexes(db); 
+    
+    return db;
   } catch (error) {
-    console.error("❌ MongoDB connection failed:", error);
-  }
-};
-
-const createIndexes = async () => {
-  try {
-    await db.collection("users").createIndex({ email: 1 }, { unique: true });
-    await db.collection("clubs").createIndex({ status: 1 });
-    await db.collection("clubs").createIndex({ category: 1 });
-    await db.collection("clubs").createIndex({ clubName: "text", description: "text" });
-    await db.collection("memberships").createIndex({ userEmail: 1, clubId: 1 });
-    await db.collection("events").createIndex({ clubId: 1 });
-    await db.collection("events").createIndex({ eventDate: 1 });
-    await db.collection("eventRegistrations").createIndex({ eventId: 1, userEmail: 1 });
-    await db.collection("reviews").createIndex({ clubId: 1 });
-    await db.collection("bookmarks").createIndex({ userEmail: 1 });
-    await db.collection("announcements").createIndex({ clubId: 1 });
-    console.log("✅ Database indexes created");
-  } catch (error) {
-    console.error("Index creation error:", error);
+    console.error("❌ MongoDB connection failed:", error.message);
+    throw error;
   }
 };
 
 export const getDB = () => {
-  if (!db) throw new Error("Database not initialized");
+  if (!db) throw new Error("Database not initialized. Call connectDB first.");
   return db;
 };
